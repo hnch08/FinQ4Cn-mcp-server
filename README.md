@@ -22,6 +22,10 @@ A dedicated MCP server tool designed for quantitative analysis, FinQ4Cn-mcp-serv
 - Obtain the margin trading and short selling details of the specified stock within the specified time range  
 - Retrieve the historical dividend and rights issue details of the specified stock
 
+### News Report
+- Fetch the latest financial news and market trends within a specified date range.
+- Fetch the latest news articles and information related to a specific stock within a specified date range.
+
 ## Project Structure
 
 ```
@@ -84,6 +88,8 @@ For detailed MCP configuration instructions across `Cherry Studio`, visit:
 }
 ```
 
+![image](mcp-server/demo_png/mcp4Cherry.png)
+
 For detailed instructions on how to configure and use this toolkit for in-depth stock data analysis, please refer to the documentation or example code.
 
 ## Available Tools
@@ -95,8 +101,14 @@ For detailed instructions on how to configure and use this toolkit for in-depth 
 - `get_stock_margin_detail`: Obtain the margin trading and short selling details of companies listed .
 - `get_stock_fhps_detail`: Obtain the historical dividend and rights issue details of companies listed .
 
-### stocks_risk_alert
-- `get_stock_zh_a_st`: Obtain detailed volatility information for listed companies with significant stock price fluctuations.
+![image](mcp-server/demo_png/工具-分析综合股票财报.png)
+
+
+### news report
+- `financial_news`:Fetch the latest financial news and market trends within a specified date range.
+- `stock_news`:Fetch the latest news articles and information related to a specific stock within a specified date range.
+
+![image](mcp-server/demo_png/工具-个股新闻.png)
 
 ### Example usage:
 
@@ -128,7 +140,6 @@ if __name__ == "__main__":
             stock_margin_detail = stockutils.get_stock_margin_detail(stock_code=stock_code, start_date="20230102", end_date="20230110")
             print(stock_margin_detail)
 ```
-
 
 ## License
 
