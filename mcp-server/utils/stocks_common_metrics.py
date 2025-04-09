@@ -3,7 +3,7 @@ import akshare as ak
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from .modules import DateValidator, StockCode, StockPricedata, FinancialAbstract, FhpsDetail
+from .modules import DateValidator, StockCode, StockPricedata, FinancialAbstract, FhpsDetail, BusinessStructure
 
 class StocksCommonMetrics:
     """
@@ -14,15 +14,15 @@ class StocksCommonMetrics:
 
     def get_stock_code(self, name: str)  -> List[Dict[str, Any]]:
         """
-        获取中国 A 股上市公司股票代码
+        Retrieve the stock codes of companies listed on China's A-share market.
 
         Args:
-            name: 股票名称
+            name: Stock name.
 
         Returns:
-            List[Dict[str, Any]]: 返回字典的列表，每个字典表示一家上市公司的股票名称及股票代码。每条记录包含以下字段: 
-                | name          | str  | 股票名称 |
-                | stock_code    | str  | 股票代码 |
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents the stock name and stock code of a listed company. Each dictionary contains the following elements:
+                | name          | str  | Stock name |
+                | stock_code    | str  | Stock code |
         """
         result = []
         for stock_data in [
@@ -39,35 +39,51 @@ class StocksCommonMetrics:
         stock_codes = [StockCode(**row).model_dump() for row in result]
 
         return stock_codes
-    
-    def get_stock_zygc_em(self, stock_code: str)  -> Dict[str, Any]:
+
+    # 经营业务结构
+    def get_stock_business_structure(self, stock_code: str)  -> List[Dict[str, Any]]:
         """
-        获取中国A股上市公司的主要经营业务结构，用于分析公司的核心业务、产品和服务及其收入占比
+        Retrieve the main business structure of Chinese A-share listed companies for analyzing the company's core business, products, services, and revenue distribution.
 
         Args:
-            stock_code: 股票代码，例如 "SH688041"。
+            stock_code: Stock code, e.g., "000001".
 
         Returns:
-            Dict[str, Any]: 返回一个字典，每条记录包含以下字段: 
-
-        名称	类型	描述
-        股票代码	object	-
-        报告日期	object	-
-        分类类型	object	-
-        主营构成	int64	-
-        主营收入	float64	注意单位: 元
-        收入比例	float64	-
-        主营成本	float64	注意单位: 元
-        成本比例	float64	-
-        主营利润	float64	注意单位: 元
-        利润比例	float64	-
-        毛利率	float64	-
+            List[Dict[str, Any]]: Returns a list of dictionaries, where each dictionary represents the report content for a specific reporting period. Each dictionary contains the following elements:
+                | reporting_period               | str  | Reporting period |
+                | classification_direction       | str  | Classification direction |
+                | classification                 | str  | Classification |
+                | operating_revenue              | str  | Operating revenue (Note: Unit is in yuan) |
+                | operating_revenue_yoy_growth   | str  | Year-on-year growth of operating revenue |
+                | operating_revenue_pct_of_main  | str  | Percentage of operating revenue to main business revenue |
+                | operating_cost                 | str  | Operating cost (Note: Unit is in yuan) |
+                | operating_cost_yoy_growth      | str  | Year-on-year growth of operating cost |
+                | operating_cost_pct_of_main     | str  | Percentage of operating cost to main business cost |
+                | gross_profit_margin            | str  | Gross profit margin |
+                | gross_profit_margin_yoy_growth | str  | Year-on-year growth of gross profit margin |
         """
 
-        stock_zygc_em_df = ak.stock_zygc_em(symbol="SH688041")
-        print(stock_zygc_em_df)
+        result = ak.stock_zygc_ym(symbol=stock_code)
+        column_mapping = {
+            "报告期": "reporting_period",
+            "分类方向": "classification_direction",
+            "分类": "classification",
+            "营业收入": "operating_revenue",  # 注意单位: 元
+            "营业收入-同比增长": "operating_revenue_yoy_growth",
+            "营业收入-占主营收入比": "operating_revenue_pct_of_main_revenue",
+            "营业成本": "operating_cost",  # 注意单位: 元
+            "营业成本-同比增长": "operating_cost_yoy_growth",
+            "营业成本-占主营成本比": "operating_cost_pct_of_main_cost",
+            "毛利率": "gross_profit_margin",
+            "毛利率-同比增长": "gross_profit_margin_yoy_growth",
+        }
+        result.rename(columns=column_mapping, inplace=True)
+        
+        stock_structure = result.apply(lambda row: BusinessStructure(**row).model_dump(), axis=1).tolist()
 
+        return stock_structure
 
+    # 历史价格数据。
     def get_historical_stockprice_data(self, 
                                        stock_code: str ,
                                        start_date: str, 
@@ -75,29 +91,29 @@ class StocksCommonMetrics:
                                        period: Optional[str] = 'daily',
                                        adjust: Optional[str] = '') -> List[Dict[str, Any]]:
         """
-        获取中国 A 股上市公司股票的历史价格数据。
+        Retrieve historical price data of companies listed on China's A-share market.
 
         Args:
-            stock_code: 股票代码
-            start_date: 查询的开始日期，格式为 'YYYYMMDD'。
-            end_date: 查询的结束日期，格式为 'YYYYMMDD'。
-            period: 数据频率，可选值: {'daily', 'weekly', 'monthly'}，分别表示按天、按周、按月。
-            adjust: 是否复权，可选值: {'', 'qfq', 'hfq'}，分别表示不复权、前复权、后复权。
+            stock_code: Stock code.
+            start_date: The start date of the query, formatted as 'YYYYMMDD'.
+            end_date: The end date of the query, formatted as 'YYYYMMDD'.
+            period: Data frequency. Optional values: {'daily', 'weekly', 'monthly'}, representing daily, weekly, and monthly data respectively.
+            adjust: Whether to adjust prices. Optional values: {'', 'qfq', 'hfq'}, representing no adjustment, forward adjustment, and backward adjustment respectively.
 
         Returns:
-          List[Dict[str, Any]]: 返回字典的列表，每个字典表示一个周期股票价格。每条记录包含以下字段：
-                | date          | object  | 交易日期         |
-                | stock_code    | object  | 股票代码（不带市场标识） |
-                | open          | float64 | 开盘价           |
-                | close         | float64 | 收盘价           |
-                | high          | float64 | 最高价           |
-                | low           | float64 | 最低价           |
-                | volume        | int64   | 成交量（单位：手） |
-                | turnover      | float64 | 成交额（单位：元） |
-                | amplitude     | float64 | 振幅（单位：%）   |
-                | change_rate   | float64 | 涨跌幅（单位：%） |
-                | change_amount | float64 | 涨跌额（单位：元） |
-                | turnover_rate | float64 | 换手率（单位：%） |
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents the stock price for a specific period. Each dictionary contains the following elements:
+                | date          | object  | Trading date              |
+                | stock_code    | object  | Stock code (without market identifier) |
+                | open          | float | Opening price             |
+                | close         | float | Closing price             |
+                | high          | float | Highest price             |
+                | low           | float | Lowest price              |
+                | volume        | int   | Trading volume (unit: lots)|
+                | turnover      | float | Trading turnover (unit: yuan)|
+                | amplitude     | float | Amplitude (unit: %)       |
+                | change_rate   | float | Change rate (unit: %)     |
+                | change_amount | float | Change amount (unit: yuan)|
+                | turnover_rate | float | Turnover rate (unit: %)   |
         """
         if not DateValidator(date=start_date).validate_date_format(start_date) or not DateValidator(date=end_date).validate_date_format(end_date):
             raise ValueError(f"日期格式错误，应为 YYYYMMDD，实际输入：{start_date} 或 {end_date}")
@@ -128,44 +144,44 @@ class StocksCommonMetrics:
 
         return stock_hist
 
-
+    # 关键财报数据
     def get_stock_financial_abstract(self,
                                      stock_code: str ,
                                      indicator: Optional[str] = '按报告期')  -> List[Dict[str, Any]]:
         """
-        获取中国 A 股上市公司的财务报告概要数据。
+        Retrieve the financial report summary data of companies listed on China's A-share market.
 
         Args:
-            stock_code: 股票代码
-            indicator: 指标类型，可选值: {'按报告期', '按年度', '按单季度'}
+            stock_code: Stock code.
+            indicator: Type of indicator. Optional values: {'按报告期', '按年度', '按单季度'} (By reporting period, by year, or by single quarter).
 
         Returns:
-            List[Dict[str, Any]]: 返回字典的列表，每个字典表示一条财务概要记录。每条记录包含以下字段：
-                | reporting_period               | object   | 报告期              |
-                | net_profit                     | object   | 净利润              |
-                | net_profit_growth_rate         | object   | 净利润同比增长率    |
-                | non_recurring_net_profit       | object   | 扣非净利润          |
-                | non_recurring_net_profit_growth_rate | object | 扣非净利润同比增长率 |
-                | total_operating_revenue        | object   | 营业总收入          |
-                | total_operating_revenue_growth_rate | object | 营业总收入同比增长率 |
-                | basic_earnings_per_share       | object   | 基本每股收益        |
-                | net_asset_per_share            | object   | 每股净资产          |
-                | capital_reserve_fund_per_share | object   | 每股资本公积金      |
-                | undistributed_profit_per_share | object   | 每股未分配利润      |
-                | operating_cash_flow_per_share  | object   | 每股经营现金流      |
-                | net_profit_margin              | object   | 销售净利率          |
-                | gross_profit_margin            | object   | 销售毛利率          |
-                | return_on_equity_of_roe        | object   | 净资产收益率        |
-                | diluted_return_on_equity_of_roe| object   | 净资产收益率-摊薄   |
-                | operating_cycle                | object   | 营业周期            |
-                | inventory_turnover_ratio       | object   | 存货周转率          |
-                | days_inventory_outstanding     | object   | 存货周转天数        |
-                | days_sales_outstanding         | object   | 应收账款周转天数    |
-                | current_ratio                  | object   | 流动比率            |
-                | quick_ratio                    | object   | 速动比率            |
-                | conservative_quick_ratio       | object   | 保守速动比率        |
-                | debt_to_equity_ratio           | object   | 产权比率            |
-                | asset_to_liability_ratio       | object   | 资产负债率          |
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents a financial summary record.  Each dictionary contains the following elements:
+                | reporting_period               | object   | Reporting period              |
+                | net_profit                     | object   | Net profit                    |
+                | net_profit_growth_rate         | object   | Net profit growth rate (YoY)  |
+                | non_recurring_net_profit       | object   | Non-recurring net profit      |
+                | non_recurring_net_profit_growth_rate | object | Non-recurring net profit growth rate (YoY) |
+                | total_operating_revenue        | object   | Total operating revenue       |
+                | total_operating_revenue_growth_rate | object | Total operating revenue growth rate (YoY) |
+                | basic_earnings_per_share       | object   | Basic earnings per share      |
+                | net_asset_per_share            | object   | Net assets per share          |
+                | capital_reserve_fund_per_share | object   | Capital reserve fund per share|
+                | undistributed_profit_per_share | object   | Undistributed profit per share|
+                | operating_cash_flow_per_share  | object   | Operating cash flow per share |
+                | net_profit_margin              | object   | Net profit margin             |
+                | gross_profit_margin            | object   | Gross profit margin           |
+                | return_on_equity_of_roe        | object   | Return on equity (ROE)        |
+                | diluted_return_on_equity_of_roe| object   | Diluted return on equity (ROE)|
+                | operating_cycle                | object   | Operating cycle               |
+                | inventory_turnover_ratio       | object   | Inventory turnover ratio      |
+                | days_inventory_outstanding     | object   | Days inventory outstanding    |
+                | days_sales_outstanding         | object   | Days sales outstanding         |
+                | current_ratio                  | object   | Current ratio                 |
+                | quick_ratio                    | object   | Quick ratio                   |
+                | conservative_quick_ratio       | object   | Conservative quick ratio      |
+                | debt_to_equity_ratio           | object   | Debt to equity ratio          |
+                | asset_to_liability_ratio       | object   | Asset to liability ratio      |
         """
 
         result = ak.stock_financial_abstract_ths(symbol=stock_code, indicator=indicator)
@@ -201,33 +217,34 @@ class StocksCommonMetrics:
         
         return financial_abstracts
 
+    # 融资融券明细数据。
     def get_stock_margin_detail(self, stock_code: str, start_date: str, end_date: str, freq: str = "D") -> List[Dict[str, Any]]:
         """
-        获取中国 A 股上市公司的融资融券明细数据。
+        Retrieve the margin trading and short selling details of companies listed on China's A-share market.
 
         Args:
-            stock_code: 股票代码，例如 "600000"。
-            start_date: 开始日期，格式为 YYYYMMDD。
-            end_date: 结束日期，格式为 YYYYMMDD。
-            freq: 日期间隔类型，默认为 "D"（每日）。可选值包括：
-                        - "D": 每日
-                        - "W": 每周
-                        - "MS": 每月的第一天
-                        - "ME": 每月的最后一天
-                        - "Q": 每季度
-                        - "Y": 每年
+            stock_code: Stock code, e.g., "000001".
+            start_date: Start date, formatted as YYYYMMDD.
+            end_date: End date, formatted as YYYYMMDD.
+            freq: Date interval type, default is "D" (daily). Optional values include:
+                        - "D": Daily
+                        - "W": Weekly
+                        - "MS": First day of each month
+                        - "ME": Last day of each month
+                        - "Q": Quarterly
+                        - "Y": Annually
 
         Returns:
-            List[Dict[str, Any]]: 返回字典的列表，每个字典表示一个交易日的融资融券概要。每条记录包含以下字段：
-                | trading_date           | str        | 交易日期                       |
-                | target_security_code   | str        | 标的证券代码                   |
-                | target_security_name   | str        | 标的证券简称                   |
-                | margin_balance         | int        | 融资余额 (单位: 元)             |
-                | margin_buy_amount      | int        | 融资买入额 (单位: 元)           |
-                | margin_repayment       | int        | 融资偿还额 (单位: 元)           |
-                | short_selling_balance  | int        | 融券余量                       |
-                | short_selling_volume   | int        | 融券卖出量                     |
-                | short_selling_repayment| int        | 融券偿还量                     |
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents a summary of margin trading and short selling for a trading day. Each dictionary contains the following elements:
+                | trading_date           | str        | Trading date                       |
+                | target_security_code   | str        | Target security code               |
+                | target_security_name   | str        | Target security abbreviation       |
+                | margin_balance         | int        | Margin balance (unit: yuan)        |
+                | margin_buy_amount      | int        | Margin purchase amount (unit: yuan)|
+                | margin_repayment       | int        | Margin repayment amount (unit: yuan)|
+                | short_selling_balance  | int        | Short selling balance              |
+                | short_selling_volume   | int        | Short selling volume               |
+                | short_selling_repayment| int        | Short selling repayment volume     |
         """
         # 初始化空的 DataFrame 用于存储所有数据
         all_filtered_df = pd.DataFrame()
@@ -284,34 +301,35 @@ class StocksCommonMetrics:
 
         return result
 
+    # 分红送配详情数据。
     def get_stock_fhps_detail(self, stock_code: str) -> List[Dict[str, Any]]:
         """
-        获取中国 A 股上市公司历年的分红送配详情数据。
+        Retrieve the historical dividend and rights issue details of companies listed on China's A-share market.
 
         Args:
-            stock_code: 股票代码，例如 "600000"。
+            stock_code: Stock code, e.g., "600000".
 
         Returns:
-            List[Dict[str, Any]]: 返回字典的列表，每个字典表示一次分红配送的详情。每条记录包含以下字段：
-                | reporting_period | 报告期 | object  |
-                | earnings_disclosure_date | 业绩披露日期 | object  |
-                | total_share_conversion_ratio | 送转股份-送转总比例 | float64 |
-                | bonus_share_ratio | 送转股份-送股比例 | float64 |
-                | capitalization_ratio | 送转股份-转股比例 | float64 |
-                | cash_dividend_payout_ratio | 现金分红-现金分红比例 | float64 |
-                | cash_dividend_payout_ratio_description | 现金分红-现金分红比例描述 | object  |
-                | dividend_yield | 现金分红-股息率 | float64 |
-                | earnings_per_share | 每股收益 | float64 |
-                | net_asset_value_per_share | 每股净资产 | float64 |
-                | surplus_reserve_fund_per_share | 每股公积金 | float64 |
-                | undistributed_profit_per_share | 每股未分配利润 | float64 |
-                | net_profit_growth_rate | 净利润同比增长 | float64 |
-                | total_shares_outstanding | 总股本 | int64   |
-                | preliminary_plan_announcement_date | 预案公告日 | object  |
-                | record_date | 股权登记日 | object  |
-                | ex_dividend_date | 除权除息日 | object  |
-                | proposal_progress | 方案进度 | object  |
-                | latest_announcement_date | 最新公告日期 | object  |
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents the details of a dividend or rights distribution.  Each dictionary contains the following elements:
+                | reporting_period                     | Reporting period                        | object  |
+                | earnings_disclosure_date             | Earnings disclosure date                | object  |
+                | total_share_conversion_ratio         | Share conversion - Total conversion ratio | float |
+                | bonus_share_ratio                    | Share conversion - Bonus share ratio     | float |
+                | capitalization_ratio                 | Share conversion - Capitalization ratio  | float |
+                | cash_dividend_payout_ratio           | Cash dividend - Payout ratio             | float |
+                | cash_dividend_payout_ratio_description | Cash dividend - Payout ratio description | object  |
+                | dividend_yield                       | Cash dividend - Dividend yield           | float |
+                | earnings_per_share                   | Earnings per share                      | float |
+                | net_asset_value_per_share            | Net asset value per share               | float |
+                | surplus_reserve_fund_per_share       | Surplus reserve fund per share          | float |
+                | undistributed_profit_per_share       | Undistributed profit per share          | float |
+                | net_profit_growth_rate               | Net profit growth rate (YoY)            | float |
+                | total_shares_outstanding             | Total shares outstanding                | int   |
+                | preliminary_plan_announcement_date   | Preliminary plan announcement date      | object  |
+                | record_date                          | Record date                             | object  |
+                | ex_dividend_date                     | Ex-dividend and ex-rights date          | object  |
+                | proposal_progress                    | Proposal progress                       | object  |
+                | latest_announcement_date             | Latest announcement date                | object  |
         """
 
         result = ak.stock_fhps_detail_em(symbol=stock_code)

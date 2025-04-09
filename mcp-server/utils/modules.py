@@ -107,3 +107,24 @@ class FhpsDetail(BaseModel):
     ex_dividend_date: Optional[object] = None
     proposal_progress: Optional[object] = None
     latest_announcement_date: Optional[object] = None
+
+class BusinessStructure(BaseModel):
+    reporting_period: Optional[str]  # 报告期
+    classification_direction: Optional[str] = None  # 分类方向
+    classification: Optional[str] = None  # 分类
+    operating_revenue: Optional[str] = None  # 营业收入（注意单位: 元）
+    operating_revenue_yoy_growth: Optional[str] = None  # 营业收入-同比增长
+    operating_revenue_pct_of_main: Optional[str] = None  # 营业收入-占主营收入比
+    operating_cost: Optional[str] = None  # 营业成本（注意单位: 元）
+    operating_cost_yoy_growth: Optional[str]  = None # 营业成本-同比增长
+    operating_cost_pct_of_main: Optional[str] = None  # 营业成本-占主营成本比
+    gross_profit_margin: Optional[str] = None  # 毛利率
+    gross_profit_margin_yoy_growth: Optional[str] = None  # 毛利率-同比增长
+
+class NewsData(BaseModel):
+    keyword: Optional[str]= None   # 关键词
+    title: Optional[str]  # 新闻标题
+    content: Optional[str]  # 新闻内容
+    publish_time: Optional[datetime] # 发布时间
+    source: Optional[str] = None  # 文章来源
+    url: Optional[str]= None   # 新闻链接

@@ -12,7 +12,7 @@ class StocksRiskAlert:
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key
 
-    def get_stock_code(self, stock_code: str)  -> List[Dict[str, Any]]:
+    def get_stock_zh_a_st(self, stock_code: str)  -> List[Dict[str, Any]]:
         """
         获取股票价格波动较大的上市公司的详细波动情况。
 
