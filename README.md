@@ -88,8 +88,21 @@ For detailed MCP configuration instructions across `Cherry Studio`, visit:
 }
 ```
 
-![image](mcp-server/demo_png/mcp4Cherry.png)
+![image](demo_png/mcp4Cherry.png)
 
+### Integration with `MCP inspector`
+
+For detailed MCP configuration instructions using `MCP inspector`, run the following command:
+```bash
+npx @modelcontextprotocol/inspector python ./mcp-server/fs_server.py
+```
+If the log messages are displayed, it means the service has started successfully. Open the address `http://127.0.0.1:6274` in your browser to begin debugging MCP.
+```text
+Starting MCP inspector...
+🔍 MCP Inspector is up and running at http://127.0.0.1:6274 🚀
+⚙️ Proxy server listening on port 6277
+```
+![image](demo_png/MCPinspector.png)
 For detailed instructions on how to configure and use this toolkit for in-depth stock data analysis, please refer to the documentation or example code.
 
 ## Available Tools
