@@ -1,6 +1,4 @@
-import pandas as pd
 import akshare as ak
-import re
 from typing import Any, Dict, List, Optional, Union
 
 from .modules import DateValidator, StockCode, StockPricedata, FinancialAbstract, FhpsDetail

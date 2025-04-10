@@ -1,10 +1,11 @@
 import pandas as pd
 import akshare as ak
-import re
 from typing import Any, Dict, List, Optional, Union
+from datetime import datetime, timedelta
+
 
 from .modules import NewsData
-from datetime import datetime, timedelta
+
 
 class News_Report:
     """
