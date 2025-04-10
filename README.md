@@ -88,7 +88,7 @@ For detailed MCP configuration instructions across `Cherry Studio`, visit:
 }
 ```
 
-![image](demo_png/mcp4Cherry.png)
+![image](demo_png/SetupCherry.png)
 
 ### Integration with `MCP inspector`
 
@@ -114,14 +114,14 @@ For detailed instructions on how to configure and use this toolkit for in-depth 
 - `get_stock_margin_detail`: Obtain the margin trading and short selling details of companies listed .
 - `get_stock_fhps_detail`: Obtain the historical dividend and rights issue details of companies listed .
 
-![image](mcp-server/demo_png/工具-分析综合股票财报.png)
+![image](demo_png/工具-分析综合股票财报.png)
 
 
 ### news report
 - `financial_news`:Fetch the latest financial news and market trends within a specified date range.
 - `stock_news`:Fetch the latest news articles and information related to a specific stock within a specified date range.
 
-![image](mcp-server/demo_png/工具-个股新闻.png)
+![image](demo_png/工具-个股新闻.png)
 
 ### Example usage:
 
