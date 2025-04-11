@@ -26,6 +26,10 @@ A dedicated MCP server tool designed for quantitative analysis, FinQ4Cn-mcp-serv
 - Fetch the latest financial news and market trends within a specified date range.
 - Fetch the latest news articles and information related to a specific stock within a specified date range.
 
+### Back Testing
+- Perform backtesting on historical stock data using the specified trading strategy to evaluate its performance. 
+    The strategy is as follows: if the stock is not currently held, buy the stock based on the specified holding percentage (percent) and set a profit-taking percentage (stop_profit_pct).
+
 ## Project Structure
 
 ```
@@ -122,6 +126,13 @@ For detailed instructions on how to configure and use this toolkit for in-depth 
 - `stock_news`:Fetch the latest news articles and information related to a specific stock within a specified date range.
 
 ![image](demo_png/工具-个股新闻.png)
+
+### BackTesting
+- `strategy_buy_with_stop_loss`: Perform backtesting on historical stock data using the specified trading strategy to evaluate its performance. The strategy is as follows: if the stock is not currently held, buy the stock based on the specified holding percentage (percent) and set a profit-taking percentage (stop_profit_pct).
+
+![image](demo_png/BreaktestAnswer.gif)
+
+
 
 ### Example usage:
 

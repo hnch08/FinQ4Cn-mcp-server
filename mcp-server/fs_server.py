@@ -5,31 +5,40 @@ from mcp.server.fastmcp import FastMCP
 
 from utils.stocks_common_metrics import StocksCommonMetrics
 from utils.news_report import News_Report
-
+from utils.quant_analysis import QuantAnalysis
+from utils.backtesting import pyBackTesting
 
 # Initialize the MCP server
 mcp = FastMCP()
 stocks_common_metrics=StocksCommonMetrics()
 news_report=News_Report()
-
-
+quant_analysis=QuantAnalysis()
+back_testing = pyBackTesting()
 # MCP Tool: 
 @mcp.tool()
-def get_today_date() -> str:
+def get_today_date(format: Optional[str]='YYYYMMDD') -> str:
     """
-    获取当前时间的日期。
+    Retrieve the current date.
 
     Args:
+        format: The desired format of the date. Defaults to 'YYYYMMDD'. 
+                - 'YYYYMMDD': Returns the date in 'YYYYMMDD' format.
+                - Any other value: Returns the date in 'YYYY-MM-DD' format.
 
     Returns:
-        today: 当前时间的日期，格式为 YYYY-MM-DD
+        The current date in the specified format.
     """
+
     # 获取当前日期时间
     today = datetime.today()
     
-    # 格式化为 YYYY-MM-DD 格式
-    today_formatted = today.strftime("%Y-%m-%d")
-    
+    if format == 'YYYYMMDD':
+        # 转换为时间戳
+        today_formatted = today.strftime("%Y%m%d")
+    else:
+        # 转换为日期时间字符串
+        today_formatted = today.strftime("%Y-%m-%d")
+
     return today_formatted
 
 # ----------------- 股票常用指标类。 ----------------- #
@@ -37,15 +46,15 @@ def get_today_date() -> str:
 @mcp.tool()
 def get_stock_code(name: str)  -> List[Dict[str, Any]]:
     """
-    获取中国 A 股上市公司股票代码
+    Retrieve the stock codes of companies listed on China's A-share market.
 
     Args:
-        name: 股票名称
+        name: Stock name.
 
     Returns:
-        返回字典的列表，每个字典表示一家上市公司的股票名称及股票代码。每条记录包含以下字段: 
-        | name          | str  | 股票名称 |
-        | stock_code    | str  | 股票代码 |
+        List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents the stock name and stock code of a listed company. Each dictionary contains the following elements:
+            | name          | str  | Stock name |
+            | stock_code    | str  | Stock code |
     """
 
     return stocks_common_metrics.get_stock_code(name)
@@ -265,6 +274,123 @@ def financial_news(start_date: Optional[ str] = None, end_date: Optional[ str] =
 
     return news_report.financial_news(start_date, end_date)
 
+# ----------------- 量化分析 ----------------- #
+
+@mcp.tool()
+def get_stock_rsi_ma(stock_code: str ,
+                     start_date: str,
+                     end_date: str,
+                     period: Optional[str] = 'daily',
+                     adjust: Optional[str] = '',
+                     min_window: Optional[int] = 50,
+                     max_window: Optional[int] = 200) -> List[Dict[str, Any]]:
+    """
+    Fetch the moving average and RSI data for a stock, along with their buy/sell signals, to analyse the stock's strength and weakness.
+
+    Args:
+        stock_code: Stock code, e.g., "000001".
+        start_date: Start date of the historical data (format: YYYYMMDD).
+        end_date: End date of the historical data (format: YYYYMMDD).
+        period: Time period of the data, e.g., "daily" (default: 'daily').
+        adjust: Adjustment method for historical prices (default: '').
+        min_window: Minimum window size for moving average calculation (default: 50).
+        max_window: Maximum window size for moving average calculation (default: 200).
+
+    Returns:
+        List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents a trading day's stock volatility information.
+        Each dictionary contains the following elements:
+            | date         | str  | Trading Date (format: YYYY-MM-DD) |
+            | close        | float| Closing Price |
+            | MIN_MA       | float| Moving Average with a window size of min_window |
+            | MAX_MA       | float| Moving Average with a window size of max_window |
+            | MA_SIGNAL    | str  | Moving Average Signal ("Bullish" or "Bearish") |
+            | RSI_SIGNAL   | str  | Relative Strength Index Signal ("Overbought", "Oversold", or "Neutral") |
+    """
+
+    return quant_analysis.get_stock_rsi_ma(stock_code, start_date, end_date, period, adjust, min_window, max_window)
+
+# ----------------- 回测 ----------------- #
+@mcp.tool()
+def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str, percent: float, stop_profit_pct:float)->str:
+    """
+    Perform backtesting on historical stock data using the specified trading strategy to evaluate its performance. 
+    The strategy is as follows: if the stock is not currently held, buy the stock based on the specified holding percentage (percent) and set a profit-taking percentage (stop_profit_pct).
+
+    Args:
+        stock_code: Stock code, e.g., "601688".
+        start_date: Start date of the historical data (format: YYYYMMDD).
+        end_date: End date of the historical data (format: YYYYMMDD).
+        percent (float): A dynamic parameter representing the percentage for certain actions (e.g., buying proportion).
+        stop_profit_pct (float): A dynamic parameter representing the profit-taking percentage.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents a backtesting result record.
+            Each dictionary contains the following elements:
+                | trade_count              | int    | Total number of trades executed during the backtesting period. |
+                | initial_market_value     | float  | Initial market value (investment capital) at the start of the backtesting. |
+                | end_market_value         | float  | Final market value (including unrealized PnL) at the end of the period. |
+                | total_pnl                | float  | Total profit and loss (PnL) over the entire backtesting period. |
+                | unrealized_pnl           | float  | Unrealized profit and loss at the end of the backtesting period. |
+                | total_return_pct         | float  | Total return percentage over the backtesting period. |
+                | annual_return_pct        | float  | Annualized return percentage. If not applicable, it will be null. |
+                | total_profit             | float  | Total profit amount from all winning trades. |
+                | total_loss               | float  | Total loss amount from all losing trades. |
+                | total_fees               | float  | Total fees incurred during the backtesting period. |
+                | max_drawdown             | float  | Maximum drawdown amount (peak-to-trough decline). |
+                | max_drawdown_pct         | float  | Maximum drawdown percentage relative to the initial market value. |
+                | win_rate                 | float  | Win rate as a percentage (number of winning trades divided by total trades). |
+                | loss_rate                | float  | Loss rate as a percentage (number of losing trades divided by total trades). |
+                | winning_trades           | int    | Total number of winning trades. |
+                | losing_trades            | int    | Total number of losing trades. |
+                | avg_pnl                  | float  | Average profit and loss per trade. |
+                | avg_return_pct           | float  | Average return percentage per trade. |
+                | avg_trade_bars           | float  | Average number of bars (time periods) per trade. |
+                | avg_profit               | float  | Average profit amount per winning trade. |
+                | avg_profit_pct           | float  | Average profit percentage per winning trade. |
+                | avg_winning_trade_bars   | float  | Average number of bars per winning trade. |
+                | avg_loss                 | float  | Average loss amount per losing trade. |
+                | avg_loss_pct             | float  | Average loss percentage per losing trade. |
+                | avg_losing_trade_bars    | float  | Average number of bars per losing trade. |
+                | largest_win              | float  | Largest single trade profit amount. |
+                | largest_win_pct          | float  | Largest single trade profit percentage. |
+                | largest_win_bars         | int    | Number of bars for the largest winning trade. |
+                | largest_loss             | float  | Largest single trade loss amount. |
+                | largest_loss_pct         | float  | Largest single trade loss percentage. |
+                | largest_loss_bars        | int    | Number of bars for the largest losing trade. |
+                | max_wins                 | int    | Maximum consecutive winning trades. |
+                | max_losses               | int    | Maximum consecutive losing trades. |
+                | sharpe                   | float  | Sharpe ratio, measuring risk-adjusted returns. |
+                | sortino                  | float  | Sortino ratio, focusing on downside risk-adjusted returns. |
+                | calmar                   | float  | Calmar ratio, measuring returns relative to maximum drawdown. If not applicable, it will be null. |
+                | profit_factor            | float  | Profit factor, calculated as total profit divided by total loss. |
+                | ulcer_index              | float  | Ulcer index, measuring the depth and duration of drawdowns. |
+                | upi                      | float  | UPI (Ulcer Performance Index), combining returns and ulcer index. |
+                | equity_r2                | float  | R-squared value of the equity curve, indicating goodness of fit. |
+                | std_error                | float  | Standard error of the equity curve, measuring volatility. |
+                | annual_std_error         | float  | Annualized standard error. If not applicable, it will be null. |
+                | annual_volatility_pct    | float  | Annualized volatility percentage. If not applicable, it will be null. |
+
+    Example Usage:
+        back_testing.Btesting(
+            stock_code="000001.SZ",
+            start_date="20221001",
+            end_date="20231001",
+            percent= 10,         # Dynamic parameter: Buying proportion
+            stop_profit_pct=35   # Dynamic parameter: Profit-taking percentage
+
+        )
+    """
+    strategy_parm = {
+        'strategy_name': "strategy_buy_with_stop_loss",
+        'percent': percent,         # Dynamic parameter: Buying proportion
+        'stop_profit_pct': stop_profit_pct  # Dynamic parameter: Profit-taking percentage
+    }
+    return back_testing.Btesting(
+        stock_code=stock_code,
+        start_date=start_date,
+        end_date=end_date,
+        strategy_parm=strategy_parm
+    )
 
 # Start the MCP server
 if __name__ == "__main__":
