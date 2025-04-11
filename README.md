@@ -53,6 +53,11 @@ To install dependencies:
 pip install -r requirements.txt
 ```
 
+It is recommended to install the backtesting package using the following method:
+```bash
+pip install lib-pybroker -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
+
 ## Setup
 
 1. Clone the repository:
