@@ -395,4 +395,4 @@ def strategy_buy_with_stop_loss(stock_code: str, start_date: str, end_date: str,
 # Start the MCP server
 if __name__ == "__main__":
     print(f"ASkare Stocks MCP Server starting...")
-    mcp.run()
+    mcp.run(transport="streamable-http")

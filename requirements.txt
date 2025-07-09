@@ -1,4 +1,4 @@
-mcp==1.6.0
+mcp==1.10.1
 pydantic==2.11.1
 akshare==1.16.73
 pandas==2.2.3
